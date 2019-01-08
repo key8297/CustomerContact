@@ -1,0 +1,157 @@
+﻿@model CustomerContact2.ViewModels.VWCustomerLink
+@{
+    ViewBag.Title = Model.Customer.Name;
+    ViewBag.Description = "(" + Model.Customer.Code + ")";
+}
+
+@using (Html.BeginForm("LinkContact", "Customer", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+
+    var allContacts = Model.AllContacts;
+    var linkedContacts = Model.Contacts;
+
+    <div class="row">
+        <div class="col-xs-12 col-md-12">
+            <div class="box box-default">
+                <div class="box-header">
+                    @if (string.IsNullOrEmpty(ViewBag.lastUrl))
+                    {
+                        @Html.ActionLink("Close", "Edit", "Customer", new { id = Model.Customer.Id }, new { @class = "btn btn-primary" })
+                    }
+                    else
+                    {
+                        <a class="btn btn-primary" href="@ViewBag.lastUrl">Close</a>
+                        @*@Html.ActionLink("Close", "Edit", "Customer", new { id = Model.Customer.Id }, new { @class = "btn btn-primary" })*@
+                    }
+
+                </div>
+                <div class="box-body">
+                    <div class="row box-header">
+                        <div class="col col-sm-3">
+                            <label for="name">Name</label>
+                            <input id="name" class="form-control overviewSearch" data-column="1" placeholder="Search" />
+                        </div>
+                        <div class="col col-sm-3">
+                            <label for="phone">Phone</label>
+                            <input id="phone" class="form-control overviewSearch" data-column="2" placeholder="Search" />
+                        </div>
+                        <div class="col col-sm-3">
+                            <label for="email">Email</label>
+                            <input id="email" class="form-control overviewSearch" data-column="3" placeholder="Search" />
+                        </div>
+                    </div>
+
+                    <br /><br />
+
+                    <div>
+                        <table id="linkContact" class="table table-bordered display">
+                            <thead>
+                                <tr>
+                                    <th><span>Link/Unlink</span></th>
+                                    <th><span>Name</span></th>
+                                    <th><span>Phone</span></th>
+                                    <th><span>Email</span></th>
+                                </tr>
+                            </thead>
+
+                            @foreach (var item in allContacts)
+                            {
+                                <tr>
+                                    @{
+                                        if (linkedContacts.Any(x => x.Id == item.Id))
+                                        {
+                                            <td><a class="btn btn-danger btn-sm" href="#" data-action="unlink" onclick="LinkContact(this)" data-value="@item.Id" data-contact-name="@item.Name"><i class="fa fa-unlink fa-sm"></i></a></td>
+                                        }
+                                        else
+                                        {
+                                            <td><a class="btn btn-success btn-sm" href="#" data-action="link" onclick="LinkContact(this)" data-value="@item.Id" data-contact-name="@item.Name"><i class="fa fa-link fa-sm"></i></a></td>
+                                        }
+                                    }
+                                    <td>@item.Name</td>
+                                    <td>@item.Phone</td>
+                                    <td>@item.Email</td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+<script>            
+    $(document).ready(function () {
+        var linkContact = $('#linkContact').DataTable({
+            "dom": 't<p>',
+            "columnDefs": [{
+                "targets": 0,
+                "orderable": false,
+                "className": "dt-center",
+                "width": "5%"
+            }],
+            "order": [[1, "asc"]]
+        });
+
+        $('.overviewSearch').on('keyup', function () {
+            var column = parseInt($(this).attr("data-column"));
+            var value = this.value;
+            linkContact
+                .columns(column)
+                .search(value)
+                .draw();
+        });
+
+
+    });
+
+    function Export() {
+        $("#linkContact").btechco_excelexport({
+            containerid: "tblExport"
+            , datatype: $datatype.Table
+        });
+    }
+
+    function LinkContact(e) {
+        //console.log($(this).attr('data-action') + ' ' + $(this).attr('data-value'));
+
+        var button = $(e);
+
+        var data = {};
+        data.customer = '@Model.Customer.Id';
+        data.contact = button.attr('data-value');
+
+        var action = button.attr('data-action');
+
+        var apiurl = (action == 'link') ? 'LinkContact' : 'UnLinkContact';
+        apiurl = '/CustomerContact/api/CustomerApi/' + apiurl;
+
+        $.ajax({
+            url: apiurl,
+            type: 'POST',
+            dataType: 'json',
+            data: data,
+            success: function (d) {
+                var html = (action == 'link') ? '<i class="fa fa-unlink fa-sm">' : '<i class="fa fa-link fa-sm">';
+                var button = $("a[data-value='" + d.contact + "']");
+                var message = button.attr("data-contact-name") + " " + ((action == 'link') ? 'linked.' : 'Unlinked.');
+                button
+                    .attr('data-action', (action == 'link') ? 'unlink' : 'link')
+                    .addClass((action == 'link') ? 'btn-danger' : 'btn-success')
+                    .removeClass((action == 'link') ? 'btn-success' : 'btn-danger')
+                    .html(html);
+
+                toastr.options.timeOut = 2000; // 1.5s
+                toastr.success(message, "Link/Unlink contact");
+            },
+            error: function (e) {
+                alert("Error please try again " + e);
+            }
+        });
+    }
+    </script>
+}
+
+
+

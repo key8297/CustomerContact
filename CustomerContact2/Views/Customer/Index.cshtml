@@ -1,0 +1,95 @@
+﻿@model List<CustomerContact2.Models.Customer>
+@{
+    ViewBag.Title = "Overview";
+    ViewBag.Description = "Customers";
+}
+
+<div class="row">
+    <div class="col-xs-12 col-md-12">
+        <div class="box box-default">
+            <div class="box-header">
+                @*<h3 class="box-title">Customer linked</h3>*@
+                @Html.ActionLink("New Customer", "Create", null, new { @class = "btn btn-primary" })
+                @*<a class="btn btn-primary" href="#"><i class="fa fa-plus"></i>  New Customer</a>*@
+                @*<a class="btn btn-primary" href="#"><i class="fa "></i>  Export</a>*@
+            </div>
+
+            <div class="box-body">
+                <div class="row box-header">
+                    <div class="col col-sm-3">
+                        <label for="applicantName">Code</label>
+                        <input id="applicantName" class="form-control overviewSearch" data-column="1" placeholder="Search" />
+                    </div>
+                    <div class="col col-sm-3">
+                        <label for="applicantName">Name</label>
+                        <input id="applicantName" class="form-control overviewSearch" data-column="2" placeholder="Search" />
+                    </div>
+                </div>
+
+                <br /><br />
+
+                <div>
+                    <table id="overview" class="table table-bordered display">
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th><span>Code</span></th>
+                                <th><span>Name</span></th>
+                                <th><span>Phone</span></th>
+                                <th><span>Website</span></th>
+                            </tr>
+                        </thead>
+
+                        @foreach (var item in Model)
+                        {
+                        <tr>
+                            <td>
+
+                                @using (Html.BeginForm("Delete", "Customer", new { id = item.Id }))
+                                {
+                                    <a class="btn btn-success btn-sm" title="Link contact" href="@Url.Action("LinkContact", "Customer", new { id = item.Id, lastUrl = Request.Url.ToString() })"><i class="fa fa-link fa-sm"></i></a>
+                                    <button type="submit" title="DELETE @item.Name" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want delete customer @item.Name (@item.Code)?')">
+                                        <i class="fa fa-remove fa-sm"></i>
+                                    </button>
+                                }
+                            </td>
+                            <td>@Html.ActionLink(item.Code, "Edit", "Customer", new { id = item.Id }, null)</td>
+                            <td>@Html.ActionLink(item.Name, "Edit", "Customer", new { id = item.Id }, null)</td>
+                            <td>@item.Phone</td>
+                            <td>@item.WebSite</td>
+                        </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function () {
+
+        // DataTable
+        var overview = $('#overview').DataTable({
+            "dom": 't<p>',
+            "columnDefs": [{
+                "targets": 0,
+                "orderable": false,
+                "className": "dt-center",
+                "width": "8%"
+            }],
+            "order": [[2, "asc"]]
+        });
+
+        $('.overviewSearch').on('keyup', function () {
+            var column = parseInt($(this).attr("data-column"));
+            var value = this.value;
+            overview
+                .columns(column)
+                .search(value)
+                .draw();
+        });
+
+    });
+</script>
